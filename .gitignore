@@ -1,0 +1,33 @@
+
+# Ignore the build folder where CMake outputs files
+build/
+bin/
+lib/
+.cache/
+
+CMakeFiles/
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# Compiled Object files
+*.o
+*.obj
+*.so
+*.a
+
+# --- Executables --- 
+anudb
+# Common output names
+a.out
+*.exe
+
+# --- Anudb Data Files ---
+
+*.db
+*.anudb
+*.dat
+# Vim 
+*.swp
+*~
+.#*
