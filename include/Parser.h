@@ -21,10 +21,16 @@ struct InsertStatement : public Statement {
               //  TODO: upgrade INSERT struct
 };
 
+enum class ColumnType { INT, TEXT, FLOAT };
+
+struct ColumnDefinition {
+  std::string name;
+  ColumnType type;
+};
+
 struct CreateStatement : public Statement {
   std::string table;
-  std::vector<std::string> columns;
-  std::vector<std::string> types; // FOR NOW ITS STRING TODO: add types
+  std::vector<ColumnDefinition> columns;
 };
 
 class Parser {

@@ -75,9 +75,20 @@ std::vector<Token> Tokenizer::tokenize(const std::string &input) {
       token.type = TokenType::KEYWORD_CREATE;
     else if (word == "table" || word == "TABLE")
       token.type = TokenType::KEYWORD_TABLE;
-    else if (isdigit(word[0]))
-      token.type = TokenType::INTEGER_LITERAL;
-    else
+    else if (word == "int" || word == "INT")
+      token.type = TokenType::KEYWORD_INT;
+    else if (word == "text" || word == "TEXT")
+      token.type = TokenType::KEYWORD_TEXT;
+    else if (word == "float" || word == "FLOAT")
+      token.type = TokenType::KEYWORD_FLOAT;
+    else if (word == "null" || word == "NULL")
+      token.type = TokenType::KEYWORD_NULL;
+    else if (isdigit(word[0])) {
+      if (word.find('.') != std::string::npos)
+        token.type = TokenType::FLOAT_LITERAL;
+      else
+        token.type = TokenType::INTEGER_LITERAL;
+    } else
       token.type = TokenType::IDENTIFIER;
 
     tokens.push_back(token);
@@ -111,6 +122,18 @@ void Tokenizer::printToken(const Token &T) {
   case TokenType::KEYWORD_TABLE:
     sttype = "KEYWORD_TABLE";
     break;
+  case TokenType::KEYWORD_INT:
+    sttype = "KEYWORD_INT";
+    break;
+  case TokenType::KEYWORD_TEXT:
+    sttype = "KEYWORD_TEXT";
+    break;
+  case TokenType::KEYWORD_FLOAT:
+    sttype = "KEYWORD_FLOAT";
+    break;
+  case TokenType::KEYWORD_NULL:
+    sttype = "KEYWORD_NULL";
+    break;
   case TokenType::IDENTIFIER:
     sttype = "IDENTIFIER";
     break;
@@ -119,6 +142,9 @@ void Tokenizer::printToken(const Token &T) {
     break;
   case TokenType::INTEGER_LITERAL:
     sttype = "INTEGER_LITERAL";
+    break;
+  case TokenType::FLOAT_LITERAL:
+    sttype = "FLOAT_LITERAL";
     break;
   case TokenType::SYMBOL_ASTERISK:
     sttype = "SYMBOL_ASTERISK";

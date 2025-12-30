@@ -45,7 +45,6 @@ std::unique_ptr<Statement> Parser::parse() {
 std::unique_ptr<SelectStatement> Parser::parseSelect() {
   auto stmt = std::make_unique<SelectStatement>();
 
-  // Parse columns
   if (match(TokenType::SYMBOL_ASTERISK)) {
     stmt->selectAll = true;
   } else {
@@ -77,11 +76,14 @@ std::unique_ptr<InsertStatement> Parser::parseInsert() {
 
     Token val = peek();
     if (val.type == TokenType::STRING_LITERAL ||
-        val.type == TokenType::INTEGER_LITERAL) {
+        val.type == TokenType::INTEGER_LITERAL ||
+        val.type == TokenType::FLOAT_LITERAL ||
+        val.type == TokenType::KEYWORD_NULL) {
       consume();
       stmt->values.push_back(val.text);
     } else {
-      throw std::runtime_error("Expected a value (string or integer)");
+      throw std::runtime_error(
+          "Expected a value (string, integer, float, or null)");
     }
   } while (match(TokenType::SYMBOL_COMMA));
 
@@ -102,10 +104,19 @@ std::unique_ptr<CreateStatement> Parser::parseCreate() {
 
   do {
     Token col = expect(TokenType::IDENTIFIER, "Expected column name");
-    stmt->columns.push_back(col.text);
 
-    Token type = expect(TokenType::IDENTIFIER, "Expected column type");
-    stmt->types.push_back(type.text);
+    ColumnType colType;
+    if (match(TokenType::KEYWORD_INT)) {
+      colType = ColumnType::INT;
+    } else if (match(TokenType::KEYWORD_TEXT)) {
+      colType = ColumnType::TEXT;
+    } else if (match(TokenType::KEYWORD_FLOAT)) {
+      colType = ColumnType::FLOAT;
+    } else {
+      throw std::runtime_error("Expected column type (INT, TEXT, or FLOAT)");
+    }
+
+    stmt->columns.push_back({col.text, colType});
   } while (match(TokenType::SYMBOL_COMMA));
 
   expect(TokenType::SYMBOL_RPAREN, "Expected ')'");
