@@ -60,8 +60,9 @@ std::vector<Token> Tokenizer::tokenize(const std::string &input) {
     }
     std::string word = input.substr(start, i - start);
     token.text = word;
-
-    if (word == "select" || word == "SELECT")
+    if (word == "database" || word == "DATABASE")
+      token.type = TokenType::KEYWORD_DATABASE;
+    else if (word == "select" || word == "SELECT")
       token.type = TokenType::KEYWORD_SELECT;
     else if (word == "insert" || word == "INSERT")
       token.type = TokenType::KEYWORD_INSERT;
@@ -107,6 +108,9 @@ void Tokenizer::printToken(const Token &T) {
   std::string sttype = "UNKNOWN TYPE";
 
   switch (T.type) {
+  case TokenType::KEYWORD_DATABASE:
+    sttype = "KEYWORD_DATABASE";
+    break;
   case TokenType::KEYWORD_SELECT:
     sttype = "KEYWORD_SELECT";
     break;

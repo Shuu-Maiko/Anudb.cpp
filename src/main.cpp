@@ -71,6 +71,11 @@ int main() {
           std::cout << "    " << col.name << " " << typeName << constraints
                     << "\n";
         }
+      } else if (auto createDbStmt =
+                     dynamic_cast<CreateDatabaseStatement *>(statement.get())) {
+        std::cout << "Parsed CREATE DATABASE statement\n";
+        std::cout << "  Database name is  " << createDbStmt->databseName
+                  << "\n";
       }
 
     } catch (const std::exception &e) {

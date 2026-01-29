@@ -1,5 +1,6 @@
 #include "Parser.h"
 #include "Tokenizer.h"
+#include <memory>
 #include <stdexcept>
 
 Parser::Parser(const std::vector<Token> &tokens) : tokens(tokens) {}
@@ -37,6 +38,9 @@ std::unique_ptr<Statement> Parser::parse() {
     return parseInsert();
   }
   if (match(TokenType::KEYWORD_CREATE)) {
+    if (match(TokenType::KEYWORD_DATABASE)) {
+      return parseCreateDatabase();
+    }
     return parseCreate();
   }
   throw std::runtime_error("Unknown statement or syntax error");
@@ -139,5 +143,13 @@ std::unique_ptr<CreateStatement> Parser::parseCreate() {
   expect(TokenType::SYMBOL_RPAREN, "Expected ')'");
   match(TokenType::SYMBOL_SEMICOLON);
 
+  return stmt;
+}
+
+std::unique_ptr<CreateDatabaseStatement> Parser::parseCreateDatabase() {
+  auto stmt = std::make_unique<CreateDatabaseStatement>();
+  Token dbName = expect(TokenType::IDENTIFIER, "Expected a Database Name");
+  stmt->databseName = dbName.text;
+  match(TokenType::SYMBOL_SEMICOLON);
   return stmt;
 }

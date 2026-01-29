@@ -34,6 +34,10 @@ struct CreateStatement : public Statement {
   std::vector<ColumnDefinition> columns;
 };
 
+struct CreateDatabaseStatement : public Statement {
+  std::string databseName;
+};
+
 class Parser {
 public:
   explicit Parser(const std::vector<Token> &tokens);
@@ -51,4 +55,5 @@ private:
   std::unique_ptr<SelectStatement> parseSelect();
   std::unique_ptr<InsertStatement> parseInsert();
   std::unique_ptr<CreateStatement> parseCreate();
+  std::unique_ptr<CreateDatabaseStatement> parseCreateDatabase();
 };
