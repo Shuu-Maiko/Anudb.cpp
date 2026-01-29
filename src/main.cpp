@@ -40,26 +40,38 @@ int main() {
             std::cout << col << " ";
         }
         std::cout << "\n";
-      } else if (auto insertStmt = dynamic_cast<InsertStatement *>(statement.get())) {
+      } else if (auto insertStmt =
+                     dynamic_cast<InsertStatement *>(statement.get())) {
         std::cout << "Parsed INSERT statement\n";
         std::cout << "  Table: " << insertStmt->table << "\n";
         std::cout << "  Values: ";
         for (const auto &val : insertStmt->values)
           std::cout << val << " ";
         std::cout << "\n";
-            } else if (auto createStmt =
-                           dynamic_cast<CreateStatement *>(statement.get())) {
-              std::cout << "Parsed CREATE statement\n";
-              std::cout << "  Table: " << createStmt->table << "\n";
-              std::cout << "  Columns: \n";
-                      for (const auto &col : createStmt->columns) {
-                        std::string typeName;
-                        if (col.type == ColumnType::INT) typeName = "INT";
-                        else if (col.type == ColumnType::TEXT) typeName = "TEXT";
-                        else if (col.type == ColumnType::FLOAT) typeName = "FLOAT";
-                        
-                        std::cout << "    " << col.name << " " << typeName << "\n";
-                      }            }
+      } else if (auto createStmt =
+                     dynamic_cast<CreateStatement *>(statement.get())) {
+        std::cout << "Parsed CREATE statement\n";
+        std::cout << "  Table: " << createStmt->table << "\n";
+        std::cout << "  Columns: \n";
+        for (const auto &col : createStmt->columns) {
+          std::string typeName;
+          if (col.type == ColumnType::INT)
+            typeName = "INT";
+          else if (col.type == ColumnType::TEXT)
+            typeName = "TEXT";
+          else if (col.type == ColumnType::FLOAT)
+            typeName = "FLOAT";
+
+          std::string constraints;
+          if (col.isPrimary)
+            constraints += " PRIMARY KEY";
+          else if (col.isUnique)
+            constraints += " UNIQUE";
+
+          std::cout << "    " << col.name << " " << typeName << constraints
+                    << "\n";
+        }
+      }
 
     } catch (const std::exception &e) {
       std::cerr << "Error: " << e.what() << "\n";

@@ -83,6 +83,12 @@ std::vector<Token> Tokenizer::tokenize(const std::string &input) {
       token.type = TokenType::KEYWORD_FLOAT;
     else if (word == "null" || word == "NULL")
       token.type = TokenType::KEYWORD_NULL;
+    else if (word == "primary" || word == "PRIMARY")
+      token.type = TokenType::KEYWORD_PRIMARY;
+    else if (word == "key" || word == "KEY")
+      token.type = TokenType::KEYWORD_KEY;
+    else if (word == "unique" || word == "UNIQUE")
+      token.type = TokenType::KEYWORD_UNIQUE;
     else if (isdigit(word[0])) {
       if (word.find('.') != std::string::npos)
         token.type = TokenType::FLOAT_LITERAL;
@@ -133,6 +139,15 @@ void Tokenizer::printToken(const Token &T) {
     break;
   case TokenType::KEYWORD_NULL:
     sttype = "KEYWORD_NULL";
+    break;
+  case TokenType::KEYWORD_PRIMARY:
+    sttype = "KEYWORD_PRIMARY";
+    break;
+  case TokenType::KEYWORD_KEY:
+    sttype = "KEYWORD_KEY";
+    break;
+  case TokenType::KEYWORD_UNIQUE:
+    sttype = "KEYWORD_UNIQUE";
     break;
   case TokenType::IDENTIFIER:
     sttype = "IDENTIFIER";

@@ -15,6 +15,9 @@ enum class TokenType {
   KEYWORD_TEXT,    // TEXT
   KEYWORD_FLOAT,   // FLOAT
   KEYWORD_NULL,    // NULL
+  KEYWORD_PRIMARY, // PRIMARY
+  KEYWORD_KEY,     // KEY
+  KEYWORD_UNIQUE,  // UNIQUE
   IDENTIFIER,      // Table names, column names (e.g., "users")
   STRING_LITERAL,  // Values like "anu"
   INTEGER_LITERAL, // Values like 123

@@ -116,7 +116,24 @@ std::unique_ptr<CreateStatement> Parser::parseCreate() {
       throw std::runtime_error("Expected column type (INT, TEXT, or FLOAT)");
     }
 
-    stmt->columns.push_back({col.text, colType});
+    ColumnDefinition colDef;
+    colDef.name = col.text;
+    colDef.type = colType;
+    colDef.isPrimary = false;
+    colDef.isUnique = false;
+
+    while (peek().type == TokenType::KEYWORD_PRIMARY ||
+           peek().type == TokenType::KEYWORD_UNIQUE) {
+      if (match(TokenType::KEYWORD_PRIMARY)) {
+        expect(TokenType::KEYWORD_KEY, "Expected KEY after PRIMARY");
+        colDef.isPrimary = true;
+        colDef.isUnique = true; // primary key implies unique
+      } else if (match(TokenType::KEYWORD_UNIQUE)) {
+        colDef.isUnique = true;
+      }
+    }
+
+    stmt->columns.push_back(colDef);
   } while (match(TokenType::SYMBOL_COMMA));
 
   expect(TokenType::SYMBOL_RPAREN, "Expected ')'");

@@ -16,9 +16,8 @@ struct SelectStatement : public Statement {
 
 struct InsertStatement : public Statement {
   std::string table;
-  std::vector<std::string>
-      values; // Simplifying: storing values as strings for now
-              //  TODO: upgrade INSERT struct
+  std::vector<std::string> values; //  storing values as strings for now
+                                   //  TODO: upgrade INSERT struct
 };
 
 enum class ColumnType { INT, TEXT, FLOAT };
@@ -26,6 +25,8 @@ enum class ColumnType { INT, TEXT, FLOAT };
 struct ColumnDefinition {
   std::string name;
   ColumnType type;
+  bool isPrimary = false;
+  bool isUnique = false;
 };
 
 struct CreateStatement : public Statement {
