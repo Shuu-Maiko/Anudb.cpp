@@ -1,8 +1,12 @@
+#include "Metadata.h"
 #include "Parser.h"
 #include "Tokenizer.h"
+#include <exception>
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <vector>
+namespace fs = std::filesystem;
 
 void print_prompt() { std::cout << "Anudb > "; }
 
@@ -73,11 +77,31 @@ int main() {
         }
       } else if (auto createDbStmt =
                      dynamic_cast<CreateDatabaseStatement *>(statement.get())) {
-        std::cout << "Parsed CREATE DATABASE statement\n";
-        std::cout << "  Database name is  " << createDbStmt->databseName
-                  << "\n";
+        const std::string &dbName = createDbStmt->databseName;
+        std::string filename = dbName + ".anudb";
+        bool validName = true;
+        for (char c : dbName) {
+          if (!std::isalnum(c) && c != '_') {
+            validName = false;
+            break;
+          }
+        }
+        if (!validName) {
+          std::cerr << "Error: Invalid database name '" << dbName
+                    << "'. Use only letters, numbers, and underscores.\n";
+        } else if (fs::exists(filename)) {
+          std::cerr << "Error: Database '" << dbName << "' already exists.\n";
+        } else {
+          try {
+            MetaDataHandler metadata(dbName);
+            metadata.open();
+            metadata.close();
+            std::cout << "Database '" << dbName << "' created successfully. \n";
+          } catch (const std::exception &e) {
+            std::cerr << "Error creating databse : " << e.what() << "\n";
+          }
+        }
       }
-
     } catch (const std::exception &e) {
       std::cerr << "Error: " << e.what() << "\n";
     }

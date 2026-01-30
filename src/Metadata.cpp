@@ -6,7 +6,7 @@
 namespace fs = std::filesystem;
 
 MetaDataHandler::MetaDataHandler(const std::string &dbName)
-    : filename(dbName + ".db"), isOpen(false) {}
+    : filename(dbName + ".anudb"), isOpen(false) {}
 
 MetaDataHandler::~MetaDataHandler() {
   if (isOpen) {
