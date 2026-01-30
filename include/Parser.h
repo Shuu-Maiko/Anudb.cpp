@@ -38,6 +38,12 @@ struct CreateDatabaseStatement : public Statement {
   std::string databseName;
 };
 
+struct ShowDatabasesStatement : public Statement {};
+
+struct UseDatabaseStatement : public Statement {
+  std::string databaseName;
+};
+
 class Parser {
 public:
   explicit Parser(const std::vector<Token> &tokens);
@@ -56,4 +62,6 @@ private:
   std::unique_ptr<InsertStatement> parseInsert();
   std::unique_ptr<CreateStatement> parseCreate();
   std::unique_ptr<CreateDatabaseStatement> parseCreateDatabase();
+  std::unique_ptr<ShowDatabasesStatement> parseShowDatabases();
+  std::unique_ptr<UseDatabaseStatement> parseUseDatabase();
 };

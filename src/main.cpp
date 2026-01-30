@@ -1,3 +1,4 @@
+#include "Context.h"
 #include "Metadata.h"
 #include "Parser.h"
 #include "Tokenizer.h"
@@ -8,13 +9,20 @@
 #include <vector>
 namespace fs = std::filesystem;
 
-void print_prompt() { std::cout << "Anudb > "; }
+void print_prompt(const DatabaseContext &ctx) {
+  if (ctx.hasActiveDatabase())
+    std::cout << "Anudb [" << ctx.activeDatabase << "]> ";
+  else {
+    std::cout << "Anudb >";
+  }
+}
 
 int main() {
+  DatabaseContext ctx;
   std::string input_buffer;
 
   while (true) {
-    print_prompt();
+    print_prompt(ctx);
 
     if (!std::getline(std::cin, input_buffer)) {
       break; // Exit on EOF (Ctrl+D)
@@ -100,6 +108,36 @@ int main() {
           } catch (const std::exception &e) {
             std::cerr << "Error creating databse : " << e.what() << "\n";
           }
+        }
+      } else if (dynamic_cast<ShowDatabasesStatement *>(statement.get())) {
+
+        bool found = false;
+
+        for (const auto &entry : fs::directory_iterator(".")) {
+          if (entry.is_regular_file()) {
+            std::string filename = entry.path().filename().string();
+            if (filename.size() > 6 &&
+                filename.substr(filename.size() - 6) == ".anudb") {
+              std::string dbName = filename.substr(0, filename.size() - 6);
+              if (!found)
+                std::cout << "Databases: \n";
+              std::cout << " " << dbName << "\n";
+              found = true;
+            }
+          }
+        }
+        if (!found)
+          std::cout << "No database found \n";
+      } else if (auto useDbStmt =
+                     dynamic_cast<UseDatabaseStatement *>(statement.get())) {
+        const std::string &dbName = useDbStmt->databaseName;
+        std::string filename = dbName + ".anudb";
+
+        if (!fs::exists(filename)) {
+          std::cerr << "Error: Database '" << dbName << "' does not exist.\n";
+        } else {
+          ctx.activeDatabase = dbName;
+          std::cout << "Using database '" << dbName << "'.\n";
         }
       }
     } catch (const std::exception &e) {

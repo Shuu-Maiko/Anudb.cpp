@@ -4,30 +4,33 @@
 #include <vector>
 
 enum class TokenType {
-  KEYWORD_DATABASE, // DATABASE
-  KEYWORD_SELECT,   // SELECT
-  KEYWORD_INSERT,   // INSERT
-  KEYWORD_VALUES,   // VALUES
-  KEYWORD_FROM,     // FROM
-  KEYWORD_INTO,     // INTO
-  KEYWORD_CREATE,   // CREATE
-  KEYWORD_TABLE,    // TABLE
-  KEYWORD_INT,      // INT
-  KEYWORD_TEXT,     // TEXT
-  KEYWORD_FLOAT,    // FLOAT
-  KEYWORD_NULL,     // NULL
-  KEYWORD_PRIMARY,  // PRIMARY
-  KEYWORD_KEY,      // KEY
-  KEYWORD_UNIQUE,   // UNIQUE
-  IDENTIFIER,       // Table names, column names (e.g., "users")
-  STRING_LITERAL,   // Values like "anu"
-  INTEGER_LITERAL,  // Values like 123
-  FLOAT_LITERAL,    // Values like 12.34
-  SYMBOL_ASTERISK,  // *
-  SYMBOL_COMMA,     // ,
-  SYMBOL_SEMICOLON, // ;
-  SYMBOL_LPAREN,    // (
-  SYMBOL_RPAREN     // )
+  KEYWORD_DATABASE,  // DATABASE
+  KEYWORD_DATABASES, // DATABASES
+  KEYWORD_SHOW,      // SHOW
+  KEYWORD_USE,       // USE
+  KEYWORD_SELECT,    // SELECT
+  KEYWORD_INSERT,    // INSERT
+  KEYWORD_VALUES,    // VALUES
+  KEYWORD_FROM,      // FROM
+  KEYWORD_INTO,      // INTO
+  KEYWORD_CREATE,    // CREATE
+  KEYWORD_TABLE,     // TABLE
+  KEYWORD_INT,       // INT
+  KEYWORD_TEXT,      // TEXT
+  KEYWORD_FLOAT,     // FLOAT
+  KEYWORD_NULL,      // NULL
+  KEYWORD_PRIMARY,   // PRIMARY
+  KEYWORD_KEY,       // KEY
+  KEYWORD_UNIQUE,    // UNIQUE
+  IDENTIFIER,        // Table names, column names (e.g., "users")
+  STRING_LITERAL,    // Values like "anu"
+  INTEGER_LITERAL,   // Values like 123
+  FLOAT_LITERAL,     // Values like 12.34
+  SYMBOL_ASTERISK,   // *
+  SYMBOL_COMMA,      // ,
+  SYMBOL_SEMICOLON,  // ;
+  SYMBOL_LPAREN,     // (
+  SYMBOL_RPAREN      // )
 };
 
 struct Token {

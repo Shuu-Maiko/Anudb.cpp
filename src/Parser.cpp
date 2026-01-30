@@ -43,6 +43,12 @@ std::unique_ptr<Statement> Parser::parse() {
     }
     return parseCreate();
   }
+  if (match(TokenType::KEYWORD_SHOW)) {
+    return parseShowDatabases();
+  }
+  if (match(TokenType::KEYWORD_USE)) {
+    return parseUseDatabase();
+  }
   throw std::runtime_error("Unknown statement or syntax error");
 }
 
@@ -151,5 +157,23 @@ std::unique_ptr<CreateDatabaseStatement> Parser::parseCreateDatabase() {
   Token dbName = expect(TokenType::IDENTIFIER, "Expected a Database Name");
   stmt->databseName = dbName.text;
   match(TokenType::SYMBOL_SEMICOLON);
+  return stmt;
+}
+
+std::unique_ptr<ShowDatabasesStatement> Parser::parseShowDatabases() {
+  auto stmt = std::make_unique<ShowDatabasesStatement>();
+  expect(TokenType::KEYWORD_DATABASES, "Expected DATABASES after SHOW ");
+  match(TokenType::SYMBOL_SEMICOLON);
+  return stmt;
+}
+
+std::unique_ptr<UseDatabaseStatement> Parser::parseUseDatabase() {
+  auto stmt = std::make_unique<UseDatabaseStatement>();
+
+  Token dbName =
+      expect(TokenType::IDENTIFIER, "Expected database name after USE");
+  stmt->databaseName = dbName.text;
+  match(TokenType::SYMBOL_SEMICOLON);
+
   return stmt;
 }
