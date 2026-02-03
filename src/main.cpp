@@ -62,27 +62,42 @@ int main() {
         std::cout << "\n";
       } else if (auto createStmt =
                      dynamic_cast<CreateStatement *>(statement.get())) {
-        std::cout << "Parsed CREATE statement\n";
-        std::cout << "  Table: " << createStmt->table << "\n";
-        std::cout << "  Columns: \n";
-        for (const auto &col : createStmt->columns) {
-          std::string typeName;
-          if (col.type == ColumnType::INT)
-            typeName = "INT";
-          else if (col.type == ColumnType::TEXT)
-            typeName = "TEXT";
-          else if (col.type == ColumnType::FLOAT)
-            typeName = "FLOAT";
-
-          std::string constraints;
-          if (col.isPrimary)
-            constraints += " PRIMARY KEY";
-          else if (col.isUnique)
-            constraints += " UNIQUE";
-
-          std::cout << "    " << col.name << " " << typeName << constraints
-                    << "\n";
+        if (!ctx.hasActiveDatabase()) {
+          std::cerr << "No active database. Use 'USE <database_name>'\n";
+          continue;
         }
+        try {
+          MetaDataHandler metadata(ctx.activeDatabase);
+          metadata.open();
+          std::string tableName = createStmt->table;
+          auto tableColumns = createStmt->columns;
+          metadata.createTable(tableName, tableColumns);
+          std::cout << "Created table : " << tableName << " successfully \n";
+          metadata.close();
+        } catch (std::exception &e) {
+          std::cerr << "Error: " << e.what() << "\n";
+        }
+        // std::cout << "Parsed CREATE statement\n";
+        // std::cout << "  Table: " << createStmt->table << "\n";
+        // std::cout << "  Columns: \n";
+        // for (const auto &col : createStmt->columns) {
+        //   std::string typeName;
+        //   if (col.type == ColumnType::INT)
+        //     typeName = "INT";
+        //   else if (col.type == ColumnType::TEXT)
+        //     typeName = "TEXT";
+        //   else if (col.type == ColumnType::FLOAT)
+        //     typeName = "FLOAT";
+        //
+        //   std::string constraints;
+        //   if (col.isPrimary)
+        //     constraints += " PRIMARY KEY";
+        //   else if (col.isUnique)
+        //     constraints += " UNIQUE";
+        //
+        //   std::cout << "    " << col.name << " " << typeName << constraints
+        //             << "\n";
+        // }
       } else if (auto createDbStmt =
                      dynamic_cast<CreateDatabaseStatement *>(statement.get())) {
         const std::string &dbName = createDbStmt->databseName;
@@ -106,7 +121,7 @@ int main() {
             metadata.close();
             std::cout << "Database '" << dbName << "' created successfully. \n";
           } catch (const std::exception &e) {
-            std::cerr << "Error creating databse : " << e.what() << "\n";
+            std::cerr << "Error creating database: " << e.what() << "\n";
           }
         }
       } else if (dynamic_cast<ShowDatabasesStatement *>(statement.get())) {
