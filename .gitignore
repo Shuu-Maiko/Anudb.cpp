@@ -9,7 +9,7 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 compile_commands.json
-
+tests
 # Compiled Object files
 *.o
 *.obj

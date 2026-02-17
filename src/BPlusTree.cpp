@@ -6,12 +6,21 @@
 
 BPlusTree::BPlusTree(PageManager &pm, uint32_t rootPageId)
     : pm_(pm), rootPageId_(rootPageId), keyCount_(0) {
+  FileHeader *header = static_cast<FileHeader *>(pm_.getPage(0));
   if (rootPageId_ == 0) {
-    rootPageId_ = allocatePage();
+    if (header->rootPageId != 0) {
+      rootPageId_ = header->rootPageId;
+      keyCount_ = header->keyCount;
+    } else {
+      rootPageId_ = allocatePage();
 
-    LeafNode *root = static_cast<LeafNode *>(getPage(rootPageId_));
-    root->init();
-    pm_.sync();
+      header = static_cast<FileHeader *>(pm_.getPage(0));
+      LeafNode *root = static_cast<LeafNode *>(getPage(rootPageId_));
+      root->init();
+      header->rootPageId = rootPageId_;
+      header->keyCount = 0;
+      pm_.sync();
+    }
   }
 }
 
@@ -73,6 +82,14 @@ bool BPlusTree::insert(int64_t key, const uint8_t *value, uint16_t valueLen) {
   }
   insertIntoLeaf(leaf, leafPageId, key, value, valueLen);
   keyCount_++;
+
+  // Update header with new key count
+  FileHeader *header = static_cast<FileHeader *>(pm_.getPage(0));
+  header->keyCount = keyCount_;
+  // We don't necessarily need to sync heavily on every insert for performance,
+  // but let's keep it safe or rely on OS paging.
+  // pm_.sync(); 
+
   return true;
 }
 
@@ -94,8 +111,12 @@ void BPlusTree::insertIntoLeaf(LeafNode *leaf, uint32_t leafPageId, int64_t key,
 }
 
 void BPlusTree::splitLeaf(LeafNode *leaf, uint32_t leafPageId) {
-  uint32_t newLeafPageId = allocatePage();
+  uint32_t newLeafPageId = allocatePage(); // This can invalidate 'leaf'
+  
+  // Refresh pointers
+  leaf = static_cast<LeafNode *>(getPage(leafPageId));
   LeafNode *newLeaf = static_cast<LeafNode *>(getPage(newLeafPageId));
+  
   newLeaf->init();
   uint16_t mid = leaf->keyCount / 2;
   // int64_t promotedKey = node->keys[mid];
@@ -140,6 +161,11 @@ void BPlusTree::insertIntoParent(uint32_t leftPageId, int64_t key,
   }
   if (parentPageId == INVALID_PAGE_ID) {
     uint32_t newRootPageId = allocatePage();
+    
+    // Refresh pointers after allocation
+    leftPage = getPage(leftPageId);
+    void *rightPage = getPage(rightPageId);
+
     InternalNode *newRoot = static_cast<InternalNode *>(getPage(newRootPageId));
     newRoot->init();
 
@@ -147,17 +173,20 @@ void BPlusTree::insertIntoParent(uint32_t leftPageId, int64_t key,
     newRoot->keys[0] = key;
     newRoot->children[0] = leftPageId;
     newRoot->children[1] = rightPageId;
-    void *leftNode = getPage(leftPageId);
-    void *rightNode = getPage(rightPageId);
 
-    if (*static_cast<uint8_t *>(leftNode) == LEAF_NODE) {
-      static_cast<LeafNode *>(leftNode)->parent = newRootPageId;
-      static_cast<LeafNode *>(rightNode)->parent = newRootPageId;
+    if (*static_cast<uint8_t *>(leftPage) == LEAF_NODE) {
+      static_cast<LeafNode *>(leftPage)->parent = newRootPageId;
+      static_cast<LeafNode *>(rightPage)->parent = newRootPageId;
     } else {
-      static_cast<InternalNode *>(leftNode)->parent = newRootPageId;
-      static_cast<InternalNode *>(rightNode)->parent = newRootPageId;
+      static_cast<InternalNode *>(leftPage)->parent = newRootPageId;
+      static_cast<InternalNode *>(rightPage)->parent = newRootPageId;
     }
     rootPageId_ = newRootPageId;
+
+    // Update header
+    FileHeader *header = static_cast<FileHeader *>(pm_.getPage(0));
+    header->rootPageId = rootPageId_;
+
     return;
   }
 
@@ -203,8 +232,12 @@ void BPlusTree::insertIntoInternal(InternalNode *node, uint32_t nodePageId,
 }
 
 void BPlusTree::splitInternal(InternalNode *node, uint32_t nodePageId) {
-  uint32_t newNodePageId = allocatePage();
+  uint32_t newNodePageId = allocatePage(); // This can invalidate 'node'
+  
+  // Refresh pointers
+  node = static_cast<InternalNode *>(getPage(nodePageId));
   InternalNode *newNode = static_cast<InternalNode *>(getPage(newNodePageId));
+  
   newNode->init();
   uint16_t mid = node->keyCount / 2;
   int64_t promotedKey = node->keys[mid];

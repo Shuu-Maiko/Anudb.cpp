@@ -16,7 +16,8 @@ struct FileHeader {
   uint32_t freeListHead; // head of free page list
   uint32_t rootPageId;   // of bptree
   uint32_t schemaPageId; // page location of schema
-  char reserved[4068];
+  uint64_t keyCount;
+  char reserved[4060];
   FileHeader()
       : version(ANUDB_VERSION), pageSize(PAGE_SIZE), pageCount(1),
         freeListHead(0), rootPageId(0), schemaPageId(0) {

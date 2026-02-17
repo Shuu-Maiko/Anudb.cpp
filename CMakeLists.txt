@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 include_directories(include)
-file(GLOB SOURCES "src/*.cpp")
+file(GLOB SOURCES "src/*.cpp" "tests/*.cpp")
 
 # 2. Set the executable name here
 add_executable(anudb ${SOURCES})
