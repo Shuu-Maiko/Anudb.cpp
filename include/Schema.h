@@ -2,14 +2,14 @@
 #include <cstdint>
 #include <cstring>
 
-// Attribute flags
+// compiletime computation with constexpr cool na
 constexpr uint8_t ATTR_FLAG_UNIQUE = 0x01;
 constexpr uint8_t ATTR_FLAG_PRIMARY = 0x02;
 
 struct Attribute {
   char name[256]; // Column name
   uint8_t type;   // (0=INT, 1=TEXT, 2=FLOAT)
-  uint8_t flags;  // Bitmap flags: bit0=unique, bit1=primary
+  uint8_t flags;  // a bitmap : bit0=unique, bit1=primary
   char reserved[22];
 
   Attribute() : type(0), flags(0) {

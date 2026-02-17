@@ -63,7 +63,7 @@ int main() {
       } else if (auto createStmt =
                      dynamic_cast<CreateStatement *>(statement.get())) {
         if (!ctx.hasActiveDatabase()) {
-          std::cerr << "No active database. Use 'USE <database_name>'\n";
+          std::cerr << "NO active database use 'USE <databse name> ' \n";
           continue;
         }
         try {
@@ -121,7 +121,7 @@ int main() {
             metadata.close();
             std::cout << "Database '" << dbName << "' created successfully. \n";
           } catch (const std::exception &e) {
-            std::cerr << "Error creating database: " << e.what() << "\n";
+            std::cerr << "Error creating databse : " << e.what() << "\n";
           }
         }
       } else if (dynamic_cast<ShowDatabasesStatement *>(statement.get())) {

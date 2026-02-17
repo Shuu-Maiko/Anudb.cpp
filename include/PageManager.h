@@ -11,9 +11,9 @@ constexpr size_t GROWTH_INCREMENT = 256; // 256 pages are 1 MB
 struct FileHeader {
   char magic[4]; // ANUB
   uint32_t version;
-  uint32_t pageSize; // Page Size (4KB)
+  uint32_t pageSize; // 4KB
   uint32_t pageCount;
-  uint32_t freeListHead; // Head of free page list
+  uint32_t freeListHead; // head of free page list
   uint32_t rootPageId;   // of bptree
   uint32_t schemaPageId; // page location of schema
   char reserved[4068];
