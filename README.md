@@ -18,6 +18,24 @@ Anudb is a **single-threaded embedded database** that you can build and run loca
 
 ---
 
+## System Architecture
+
+![Detailed System Architecture](docs/image.png)
+
+### Components
+
+| Component       | Purpose                                                |
+| -----------------| --------------------------------------------------------|
+| `main.cpp`      | Stateless REPL loop — reconstructs context per command |
+| `Tokenizer`     | Lexical analysis → vector of Tokens                    |
+| `Parser`        | Grammar resolution → polymorphic AST Statement         |
+| `Executor`      | Routes AST to storage engine                           |
+| `BPlusTree`     | Indexing, leaf/internal nodes, range scans             |
+| `PageManager`   | Memory-mapped file I/O                               |
+| `RowSerializer` | Binary row encoding/decoding                           |
+
+---
+
 ## Building
 
 **Requirements:** C++17 compiler (GCC 9+ or Clang 10+), CMake 3.15+
@@ -99,24 +117,6 @@ This enables $O(N)$ sequential reads vs $O(\log N)$ traversal per query.
 |---|---|---|
 | **Internal** | `int64_t` | `uint32_t` child page pointers |
 | **Leaf** | `int64_t` | Variable-length `uint8_t*` row data |
-
----
-
-## System Architecture
-
-![Detailed System Architecture](docs/image.png)
-
-### Components
-
-| Component       | Purpose                                                |
-| -----------------| --------------------------------------------------------|
-| `main.cpp`      | Stateless REPL loop — reconstructs context per command |
-| `Tokenizer`     | Lexical analysis → vector of Tokens                    |
-| `Parser`        | Grammar resolution → polymorphic AST Statement         |
-| `Executor`      | Routes AST to storage engine                           |
-| `BPlusTree`     | Indexing, leaf/internal nodes, range scans             |
-| `PageManager`   | Memory-mapped file I/O                               |
-| `RowSerializer` | Binary row encoding/decoding                           |
 
 ---
 
