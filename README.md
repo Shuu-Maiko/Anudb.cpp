@@ -47,6 +47,11 @@ make
 ./anudb
 ```
 
+### Demo
+
+![Demo](docs/Screenshot_26-Mar_22-41-36_8307.png)
+![Demo](docs/Screenshot_26-Mar_22-41-54_6419.png)
+
 ### Interactive Examples
 
 ```bash
@@ -66,24 +71,7 @@ SELECT * FROM users;
 
 ## System Architecture
 
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  Terminal   │────▶│  Tokenizer  │────▶│   Parser    │
-│   (REPL)    │     │             │     │  (AST)      │
-└─────────────┘     └─────────────┘     └─────────────┘
-                                                │
-                                                ▼
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Disk      │◀───▶│  PageManager│◀───▶│  BPlusTree  │
-│  Files      │     │  (Buffer)   │     │   Engine    │
-└─────────────┘     └─────────────┘     └─────────────┘
-                                                │
-                                                ▼
-                                         ┌─────────────┐
-                                         │ RowSerializer│
-                                         │  (Binary)    │
-                                         └─────────────┘
-```
+![Detailed System Architecture](docs/image.png)
 
 ### Components
 
