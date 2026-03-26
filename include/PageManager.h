@@ -4,8 +4,7 @@
 #include <cstring>
 #include <string>
 constexpr size_t PAGE_SIZE = 4096;
-constexpr char ANUDB_MAGIC[4] = {'A', 'N', 'U', 'B'};
-constexpr uint32_t ANUDB_VERSION = 1;
+#include "Constants.h"
 constexpr size_t GROWTH_INCREMENT = 256; // 256 pages are 1 MB
 #pragma pack(push, 1)
 struct FileHeader {

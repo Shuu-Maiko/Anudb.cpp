@@ -2,6 +2,8 @@
 #include "PageManager.h"
 #include <cstdint>
 #include <cstring>
+#include <iostream>
+#include <queue>
 #include <vector>
 
 BPlusTree::BPlusTree(PageManager &pm, uint32_t rootPageId)
@@ -59,7 +61,6 @@ bool BPlusTree::find(int64_t key, std::vector<uint8_t> &outValue) {
   LeafNode *leaf = findLeaf(key);
   uint16_t pos = leaf->findPosition(key);
   if (pos < leaf->keyCount && leaf->slots[pos].key == key) {
-    // uint16_t offset = leaf->slots[pos].valueOffset;
     uint16_t len = leaf->slots[pos].valueLen;
     const uint8_t *valuePtr = leaf->getValuePtr(pos, leaf);
     outValue.assign(valuePtr, valuePtr + len);
@@ -75,7 +76,7 @@ bool BPlusTree::insert(int64_t key, const uint8_t *value, uint16_t valueLen) {
   if (pos < leaf->keyCount && leaf->slots[pos].key == key) {
     return false;
   }
-  if (!leaf->hasSpaceFor(valueLen)) {
+  if (!leaf->hasSpaceFor(valueLen) || leaf->keyCount >= MAX_LEAF_KEYS) {
     splitLeaf(leaf, leafPageId);
     leafPageId = findLeafPageId(key);
     leaf = static_cast<LeafNode *>(getPage(leafPageId));
@@ -83,18 +84,15 @@ bool BPlusTree::insert(int64_t key, const uint8_t *value, uint16_t valueLen) {
   insertIntoLeaf(leaf, leafPageId, key, value, valueLen);
   keyCount_++;
 
-  // Update header with new key count
   FileHeader *header = static_cast<FileHeader *>(pm_.getPage(0));
   header->keyCount = keyCount_;
-  // We don't necessarily need to sync heavily on every insert for performance,
-  // but let's keep it safe or rely on OS paging.
-  // pm_.sync(); 
-
   return true;
 }
 
-void BPlusTree::insertIntoLeaf(LeafNode *leaf, uint32_t leafPageId, int64_t key,
-                               const uint8_t *value, uint16_t valueLen) {
+void BPlusTree::insertIntoLeaf(LeafNode *leaf,
+                               [[maybe_unused]] uint32_t leafPageId,
+                               int64_t key, const uint8_t *value,
+                               uint16_t valueLen) {
   uint16_t pos = leaf->findPosition(key);
   uint16_t valueOffset = leaf->getNextValueOffset() - valueLen;
   if (pos < leaf->keyCount) {
@@ -112,14 +110,12 @@ void BPlusTree::insertIntoLeaf(LeafNode *leaf, uint32_t leafPageId, int64_t key,
 
 void BPlusTree::splitLeaf(LeafNode *leaf, uint32_t leafPageId) {
   uint32_t newLeafPageId = allocatePage(); // This can invalidate 'leaf'
-  
-  // Refresh pointers
+
   leaf = static_cast<LeafNode *>(getPage(leafPageId));
   LeafNode *newLeaf = static_cast<LeafNode *>(getPage(newLeafPageId));
-  
+
   newLeaf->init();
   uint16_t mid = leaf->keyCount / 2;
-  // int64_t promotedKey = node->keys[mid];
   for (uint16_t i = mid; i < leaf->keyCount; i++) {
     uint16_t srcIndex = i;
     uint16_t dstIndex = i - mid;
@@ -127,15 +123,15 @@ void BPlusTree::splitLeaf(LeafNode *leaf, uint32_t leafPageId) {
     newLeaf->slots[dstIndex].valueLen = leaf->slots[srcIndex].valueLen;
 
     uint16_t valueLen = leaf->slots[srcIndex].valueLen;
-    uint16_t newOffset = newLeaf->getNextValueOffset();
+    uint16_t newOffset = newLeaf->getNextValueOffset() - valueLen;
     newLeaf->slots[dstIndex].valueOffset = newOffset;
 
     uint8_t *srcValue = leaf->getValuePtr(srcIndex, leaf);
     uint8_t *dstValue =
         static_cast<uint8_t *>(static_cast<void *>(newLeaf)) + newOffset;
     std::memcpy(dstValue, srcValue, valueLen);
+    newLeaf->keyCount++;
   }
-  newLeaf->keyCount = leaf->keyCount - mid;
   leaf->keyCount = mid;
   newLeaf->nextLeaf = leaf->nextLeaf;
   newLeaf->prevLeaf = leafPageId;
@@ -161,8 +157,7 @@ void BPlusTree::insertIntoParent(uint32_t leftPageId, int64_t key,
   }
   if (parentPageId == INVALID_PAGE_ID) {
     uint32_t newRootPageId = allocatePage();
-    
-    // Refresh pointers after allocation
+
     leftPage = getPage(leftPageId);
     void *rightPage = getPage(rightPageId);
 
@@ -183,7 +178,6 @@ void BPlusTree::insertIntoParent(uint32_t leftPageId, int64_t key,
     }
     rootPageId_ = newRootPageId;
 
-    // Update header
     FileHeader *header = static_cast<FileHeader *>(pm_.getPage(0));
     header->rootPageId = rootPageId_;
 
@@ -233,11 +227,11 @@ void BPlusTree::insertIntoInternal(InternalNode *node, uint32_t nodePageId,
 
 void BPlusTree::splitInternal(InternalNode *node, uint32_t nodePageId) {
   uint32_t newNodePageId = allocatePage(); // This can invalidate 'node'
-  
+
   // Refresh pointers
   node = static_cast<InternalNode *>(getPage(nodePageId));
   InternalNode *newNode = static_cast<InternalNode *>(getPage(newNodePageId));
-  
+
   newNode->init();
   uint16_t mid = node->keyCount / 2;
   int64_t promotedKey = node->keys[mid];
@@ -284,4 +278,94 @@ void BPlusTree::range(
     }
     leaf = static_cast<LeafNode *>(getPage(leaf->nextLeaf));
   }
+}
+
+bool BPlusTree::remove(int64_t key) {
+  uint32_t leafPageId = findLeafPageId(key);
+  LeafNode *leaf = static_cast<LeafNode *>(getPage(leafPageId));
+  uint16_t pos = leaf->findPosition(key);
+
+  if (pos >= leaf->keyCount || leaf->slots[pos].key != key) {
+    return false; // Key not found
+  }
+
+  if (pos < leaf->keyCount - 1) {
+    std::memmove(&leaf->slots[pos], &leaf->slots[pos + 1],
+                 (leaf->keyCount - pos - 1) * sizeof(LeafSlot));
+  }
+
+  leaf->keyCount--;
+  keyCount_--;
+
+  FileHeader *header = static_cast<FileHeader *>(pm_.getPage(0));
+  header->keyCount = keyCount_;
+
+  return true;
+}
+
+void BPlusTree::dump() {
+  std::cout << "\n=== B+Tree Dump ===" << std::endl;
+  std::cout << "Root page: " << rootPageId_ << "  Total keys: " << keyCount_
+            << std::endl;
+
+  if (rootPageId_ == INVALID_PAGE_ID) {
+    std::cout << "(empty tree)" << std::endl;
+    std::cout << "===================" << std::endl;
+    return;
+  }
+
+  std::queue<std::pair<uint32_t, int>> q;
+  q.push({rootPageId_, 0});
+  int currentLevel = -1;
+
+  while (!q.empty()) {
+    auto [pageId, level] = q.front();
+    q.pop();
+
+    if (level != currentLevel) {
+      currentLevel = level;
+      std::cout << "\n[Level " << currentLevel << "]" << std::endl;
+    }
+
+    void *page = getPage(pageId);
+    uint8_t nodeType = *static_cast<uint8_t *>(page);
+
+    if (nodeType == INTERNAL_NODE) {
+      InternalNode *node = static_cast<InternalNode *>(page);
+      std::cout << "  Internal(page=" << pageId << " parent=" << node->parent
+                << " keys=" << node->keyCount << ") [";
+      for (uint16_t i = 0; i < node->keyCount; i++) {
+        if (i > 0)
+          std::cout << " ";
+        std::cout << node->keys[i];
+      }
+      std::cout << "] children=[";
+      for (uint16_t i = 0; i <= node->keyCount; i++) {
+        if (i > 0)
+          std::cout << " ";
+        std::cout << node->children[i];
+      }
+      std::cout << "]" << std::endl;
+
+      for (uint16_t i = 0; i <= node->keyCount; i++) {
+        if (node->children[i] != INVALID_PAGE_ID) {
+          q.push({node->children[i], level + 1});
+        }
+      }
+    } else if (nodeType == LEAF_NODE) {
+      LeafNode *leaf = static_cast<LeafNode *>(page);
+      std::cout << "  Leaf(page=" << pageId << " parent=" << leaf->parent
+                << " keys=" << (int)leaf->keyCount << " prev=" << leaf->prevLeaf
+                << " next=" << leaf->nextLeaf << ") [";
+      for (uint16_t i = 0; i < leaf->keyCount; i++) {
+        if (i > 0)
+          std::cout << " ";
+        std::cout << leaf->slots[i].key << "(" << leaf->slots[i].valueLen
+                  << "B)";
+      }
+      std::cout << "]" << std::endl;
+    }
+  }
+
+  std::cout << "===================" << std::endl;
 }

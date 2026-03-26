@@ -51,7 +51,6 @@ void PageManager::openOrCreate() {
 }
 
 void PageManager::initNewFile() {
-  // set file size to exactly one page
   if (::ftruncate(fd, PAGE_SIZE) == -1) {
     handleError("Failed to initialize file size");
     return;

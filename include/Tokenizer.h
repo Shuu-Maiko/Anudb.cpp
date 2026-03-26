@@ -22,6 +22,10 @@ enum class TokenType {
   KEYWORD_PRIMARY,   // PRIMARY
   KEYWORD_KEY,       // KEY
   KEYWORD_UNIQUE,    // UNIQUE
+  KEYWORD_DELETE,    // DELETE
+  KEYWORD_UPDATE,    // UPDATE
+  KEYWORD_SET,       // SET
+  KEYWORD_WHERE,     // WHERE
   IDENTIFIER,        // Table names, column names (e.g., "users")
   STRING_LITERAL,    // Values like "anu"
   INTEGER_LITERAL,   // Values like 123
@@ -30,7 +34,8 @@ enum class TokenType {
   SYMBOL_COMMA,      // ,
   SYMBOL_SEMICOLON,  // ;
   SYMBOL_LPAREN,     // (
-  SYMBOL_RPAREN      // )
+  SYMBOL_RPAREN,     // )
+  SYMBOL_EQUALS      // =
 };
 
 struct Token {

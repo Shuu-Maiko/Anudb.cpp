@@ -76,15 +76,10 @@ struct LeafNode {
   }
 
   bool hasSpaceFor(uint16_t valueLen) const {
-    size_t headerSize = 24;
-    size_t slotsUsed = (keyCount + 1) * sizeof(LeafSlot);
-    size_t valuesUsed = 0;
-
-    for (uint16_t i = 0; i < keyCount; i++) {
-      valuesUsed += slots[i].valueLen;
-    }
-    size_t used = headerSize + slotsUsed + valuesUsed + valueLen;
-    return used <= PAGE_SIZE;
+    size_t headerSize = 23;
+    size_t slotsEnd = headerSize + (keyCount + 1) * sizeof(LeafSlot);
+    uint16_t valuesStart = getNextValueOffset() - valueLen;
+    return valuesStart >= slotsEnd;
   }
 
   uint16_t findPosition(int64_t key) const {
@@ -148,6 +143,8 @@ public:
   uint32_t getRootPageId() const { return rootPageId_; }
 
   size_t size() const { return keyCount_; }
+
+  void dump();
 
 private:
   PageManager &pm_;

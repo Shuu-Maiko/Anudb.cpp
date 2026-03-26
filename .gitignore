@@ -1,33 +1,33 @@
-
 # Ignore the build folder where CMake outputs files
 build/
-bin/
-lib/
 .cache/
 
+# CMake generated files
 CMakeFiles/
 cmake_install.cmake
 Makefile
 compile_commands.json
-tests
+
 # Compiled Object files
 *.o
 *.obj
 *.so
 *.a
 
-# --- Executables --- 
+# Test executables (built from tests/ source)
+test_bplustree
+test_serializer
+test_persistence
+billion_bench
 anudb
-# Common output names
 a.out
 *.exe
 
-# --- Anudb Data Files ---
-
-*.db
+# Anudb database files
 *.anudb
-*.dat
-# Vim 
+*.anudb_data
+
+# Editor files
 *.swp
 *~
 .#*

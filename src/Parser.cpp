@@ -37,6 +37,12 @@ std::unique_ptr<Statement> Parser::parse() {
   if (match(TokenType::KEYWORD_INSERT)) {
     return parseInsert();
   }
+  if (match(TokenType::KEYWORD_UPDATE)) {
+    return parseUpdate();
+  }
+  if (match(TokenType::KEYWORD_DELETE)) {
+    return parseDelete();
+  }
   if (match(TokenType::KEYWORD_CREATE)) {
     if (match(TokenType::KEYWORD_DATABASE)) {
       return parseCreateDatabase();
@@ -67,6 +73,12 @@ std::unique_ptr<SelectStatement> Parser::parseSelect() {
   expect(TokenType::KEYWORD_FROM, "Expected FROM");
   Token table = expect(TokenType::IDENTIFIER, "Expected table name");
   stmt->table = table.text;
+
+  if (match(TokenType::KEYWORD_WHERE)) {
+    stmt->where = parseWhere();
+    stmt->hasWhere = true;
+  }
+
   match(TokenType::SYMBOL_SEMICOLON);
 
   return stmt;
@@ -137,7 +149,7 @@ std::unique_ptr<CreateStatement> Parser::parseCreate() {
       if (match(TokenType::KEYWORD_PRIMARY)) {
         expect(TokenType::KEYWORD_KEY, "Expected KEY after PRIMARY");
         colDef.isPrimary = true;
-        colDef.isUnique = true; // primary key implies unique
+        colDef.isUnique = true;
       } else if (match(TokenType::KEYWORD_UNIQUE)) {
         colDef.isUnique = true;
       }
@@ -176,4 +188,70 @@ std::unique_ptr<UseDatabaseStatement> Parser::parseUseDatabase() {
   match(TokenType::SYMBOL_SEMICOLON);
 
   return stmt;
+}
+
+std::unique_ptr<UpdateStatement> Parser::parseUpdate() {
+  auto stmt = std::make_unique<UpdateStatement>();
+
+  Token table = expect(TokenType::IDENTIFIER, "Expected table name");
+  stmt->table = table.text;
+
+  expect(TokenType::KEYWORD_SET, "Expected SET");
+  Token col = expect(TokenType::IDENTIFIER, "Expected column name");
+  stmt->column = col.text;
+
+  expect(TokenType::SYMBOL_EQUALS, "Expected '='");
+
+  Token val = consume();
+  if (val.type != TokenType::STRING_LITERAL &&
+      val.type != TokenType::INTEGER_LITERAL &&
+      val.type != TokenType::FLOAT_LITERAL) {
+    throw std::runtime_error("Expected a literal value in SET");
+  }
+  stmt->value = val.text;
+
+  if (match(TokenType::KEYWORD_WHERE)) {
+    stmt->where = parseWhere();
+    stmt->hasWhere = true;
+  }
+
+  match(TokenType::SYMBOL_SEMICOLON);
+  return stmt;
+}
+
+std::unique_ptr<DeleteStatement> Parser::parseDelete() {
+  auto stmt = std::make_unique<DeleteStatement>();
+
+  expect(TokenType::KEYWORD_FROM, "Expected FROM");
+  Token table = expect(TokenType::IDENTIFIER, "Expected table name");
+  stmt->table = table.text;
+
+  if (match(TokenType::KEYWORD_WHERE)) {
+    stmt->where = parseWhere();
+    stmt->hasWhere = true;
+  }
+
+  match(TokenType::SYMBOL_SEMICOLON);
+  return stmt;
+}
+
+WhereClause Parser::parseWhere() {
+  WhereClause where;
+  Token col = expect(TokenType::IDENTIFIER, "Expected column name in WHERE");
+  where.column = col.text;
+
+  expect(TokenType::SYMBOL_EQUALS, "Expected '=' in WHERE");
+
+  Token val = consume();
+  if (val.type == TokenType::KEYWORD_NULL) {
+    where.isNull = true;
+  } else if (val.type == TokenType::STRING_LITERAL ||
+             val.type == TokenType::INTEGER_LITERAL ||
+             val.type == TokenType::FLOAT_LITERAL) {
+    where.value = val.text;
+  } else {
+    throw std::runtime_error("Expected a value or NULL in WHERE");
+  }
+
+  return where;
 }

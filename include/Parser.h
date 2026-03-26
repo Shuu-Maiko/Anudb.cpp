@@ -8,16 +8,38 @@ struct Statement { // ALL statments base class
   virtual ~Statement() = default;
 };
 
+struct WhereClause {
+  std::string column;
+  std::string value;
+  bool isNull = false;
+};
+
 struct SelectStatement : public Statement {
   std::string table;
   std::vector<std::string> columns;
   bool selectAll = false;
+  WhereClause where;
+  bool hasWhere = false;
 };
 
 struct InsertStatement : public Statement {
   std::string table;
   std::vector<std::string> values; //  storing values as strings for now
                                    //  TODO: upgrade INSERT struct
+};
+
+struct DeleteStatement : public Statement {
+  std::string table;
+  WhereClause where;
+  bool hasWhere = false;
+};
+
+struct UpdateStatement : public Statement {
+  std::string table;
+  std::string column;
+  std::string value;
+  WhereClause where;
+  bool hasWhere = false;
 };
 
 enum class ColumnType { INT, TEXT, FLOAT };
@@ -60,8 +82,12 @@ private:
 
   std::unique_ptr<SelectStatement> parseSelect();
   std::unique_ptr<InsertStatement> parseInsert();
+  std::unique_ptr<UpdateStatement> parseUpdate();
+  std::unique_ptr<DeleteStatement> parseDelete();
   std::unique_ptr<CreateStatement> parseCreate();
   std::unique_ptr<CreateDatabaseStatement> parseCreateDatabase();
   std::unique_ptr<ShowDatabasesStatement> parseShowDatabases();
   std::unique_ptr<UseDatabaseStatement> parseUseDatabase();
+
+  WhereClause parseWhere();
 };

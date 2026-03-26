@@ -29,14 +29,12 @@ void MetaDataHandler::open() {
     readHeader();
     buildIndex();
   } else {
-    // creating new file
     fileStream.open(filename, std::ios::out | std::ios::binary);
     if (!fileStream) {
       throw std::runtime_error("Failed to create metadata file: " + filename);
     }
     fileStream.close();
 
-    // reopen for read/write
     fileStream.open(filename, std::ios::in | std::ios::out | std::ios::binary);
     if (!fileStream) {
       throw std::runtime_error("Failed to reopen metadata file: " + filename);
@@ -81,7 +79,6 @@ void MetaDataHandler::readHeader() {
 void MetaDataHandler::buildIndex() {
   tableIndex.clear();
 
-  // start after header
   std::streampos pos = sizeof(MetaDataHeader);
   fileStream.seekg(pos);
 
@@ -98,7 +95,6 @@ void MetaDataHandler::buildIndex() {
     // hash map of tables meta data
     tableIndex[std::string(tableMeta.tableName)] = pos;
 
-    // skip over the attributes
     pos = fileStream.tellg();
     std::streamoff attrSize =
         static_cast<std::streamoff>(tableMeta.columnCount) * sizeof(Attribute);
@@ -113,8 +109,8 @@ void MetaDataHandler::createTable(
     throw std::runtime_error("Database not open");
   }
 
-  if (name.length() >= 256) {
-    throw std::runtime_error("Table name too long (max 255 characters)");
+  if (name.length() >= 248) {
+    throw std::runtime_error("Table name too long (max 247 characters)");
   }
 
   if (tableExists(name)) {
@@ -125,20 +121,17 @@ void MetaDataHandler::createTable(
     throw std::runtime_error("Table must have at least one column");
   }
 
-  // seek to end of file
   fileStream.seekp(0, std::ios::end);
   std::streampos tablePos = fileStream.tellp();
 
-  // write table metadata
   TableMetaData tableMeta;
-  std::strncpy(tableMeta.tableName, name.c_str(), 255);
-  tableMeta.tableName[255] = '\0';
+  std::strncpy(tableMeta.tableName, name.c_str(), 247);
+  tableMeta.tableName[247] = '\0';
   tableMeta.columnCount = static_cast<uint32_t>(columns.size());
 
   fileStream.write(reinterpret_cast<const char *>(&tableMeta),
                    sizeof(TableMetaData));
 
-  // write column attributes
   for (const auto &col : columns) {
     if (col.name.length() >= 256) {
       throw std::runtime_error("Column name too long (max 255 characters): " +
@@ -156,7 +149,6 @@ void MetaDataHandler::createTable(
 
   fileStream.flush();
 
-  // update header
   header.tableCount++;
   writeHeader();
   tableIndex[name] = tablePos;
@@ -181,11 +173,9 @@ TableInfo MetaDataHandler::getTable(const std::string &name) {
 
   TableInfo info;
 
-  // table metadata
   fileStream.read(reinterpret_cast<char *>(&info.metadata),
                   sizeof(TableMetaData));
 
-  // columns
   info.columns.resize(info.metadata.columnCount);
   for (uint32_t i = 0; i < info.metadata.columnCount; ++i) {
     fileStream.read(reinterpret_cast<char *>(&info.columns[i]),
@@ -204,4 +194,21 @@ std::vector<std::string> MetaDataHandler::listTables() const {
   }
 
   return tables;
+}
+
+void MetaDataHandler::updateTable(const std::string &name,
+                                  const TableMetaData &newMeta) {
+  if (!isOpen) {
+    throw std::runtime_error("Database not open");
+  }
+
+  auto it = tableIndex.find(name);
+  if (it == tableIndex.end()) {
+    throw std::runtime_error("Table not found: " + name);
+  }
+
+  fileStream.seekp(it->second);
+  fileStream.write(reinterpret_cast<const char *>(&newMeta),
+                   sizeof(TableMetaData));
+  fileStream.flush();
 }

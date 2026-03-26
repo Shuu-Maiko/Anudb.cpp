@@ -7,10 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-// magic bytes for file validation
-constexpr char ANUDB_MAGIC[4] = {'A', 'N', 'U', 'B'};
-// intresting way for backward compatability
-constexpr uint32_t ANUDB_VERSION = 1;
+#include "Constants.h"
 
 // File header- (12 bytes)
 struct MetaDataHeader {
@@ -69,10 +66,12 @@ struct Attribute {
 
 //  260 bytes
 struct TableMetaData {
-  char tableName[256];  // Table name
-  uint32_t columnCount; // No. of columns
+  char tableName[248];      // Table name
+  uint32_t columnCount;     // No. of columns
+  uint32_t rootPageId;      // Root page of this table's B+Tree
+  uint32_t autoIncrementId; // Counter for next inserted row
 
-  TableMetaData() : columnCount(0) {
+  TableMetaData() : columnCount(0), rootPageId(0), autoIncrementId(1) {
     std::memset(tableName, 0, sizeof(tableName));
   }
 };
@@ -103,6 +102,7 @@ public:
                    const std::vector<ColumnDefinition> &columns);
   bool tableExists(const std::string &name) const;
   TableInfo getTable(const std::string &name);
+  void updateTable(const std::string &name, const TableMetaData &newMeta);
   std::vector<std::string> listTables() const;
   uint32_t getTableCount() const { return header.tableCount; }
 

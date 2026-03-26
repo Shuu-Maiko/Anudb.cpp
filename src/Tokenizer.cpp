@@ -3,7 +3,7 @@
 #include <iostream>
 
 bool is_symbol(char c) {
-  return c == '(' || c == ')' || c == ',' || c == '*' || c == ';';
+  return c == '(' || c == ')' || c == ',' || c == '*' || c == ';' || c == '=';
 }
 
 std::vector<Token> Tokenizer::tokenize(const std::string &input) {
@@ -33,14 +33,15 @@ std::vector<Token> Tokenizer::tokenize(const std::string &input) {
         token.type = TokenType::SYMBOL_LPAREN;
       else if (c == ')')
         token.type = TokenType::SYMBOL_RPAREN;
+      else if (c == '=')
+        token.type = TokenType::SYMBOL_EQUALS;
       tokens.push_back(token);
       i++;
       continue;
     }
     if (input[i] == '\'') {
       size_t start = ++i;
-      while (i < input.length() && !std::isspace(input[i]) &&
-             !is_symbol(input[i]) && input[i] != '\'') {
+      while (i < input.length() && input[i] != '\'') {
         i++;
       }
 
@@ -51,6 +52,10 @@ std::vector<Token> Tokenizer::tokenize(const std::string &input) {
         tokens.push_back(token);
         i++;
         continue;
+      } else {
+        throw std::runtime_error(
+            "Unterminated string literal starting at position " +
+            std::to_string(start - 1));
       }
     }
     size_t start = i;
@@ -96,6 +101,14 @@ std::vector<Token> Tokenizer::tokenize(const std::string &input) {
       token.type = TokenType::KEYWORD_KEY;
     else if (word == "unique" || word == "UNIQUE")
       token.type = TokenType::KEYWORD_UNIQUE;
+    else if (word == "delete" || word == "DELETE")
+      token.type = TokenType::KEYWORD_DELETE;
+    else if (word == "update" || word == "UPDATE")
+      token.type = TokenType::KEYWORD_UPDATE;
+    else if (word == "set" || word == "SET")
+      token.type = TokenType::KEYWORD_SET;
+    else if (word == "where" || word == "WHERE")
+      token.type = TokenType::KEYWORD_WHERE;
     else if (isdigit(word[0])) {
       if (word.find('.') != std::string::npos)
         token.type = TokenType::FLOAT_LITERAL;
@@ -194,6 +207,21 @@ void Tokenizer::printToken(const Token &T) {
     break;
   case TokenType::SYMBOL_RPAREN:
     sttype = "SYMBOL_RPAREN";
+    break;
+  case TokenType::KEYWORD_DELETE:
+    sttype = "KEYWORD_DELETE";
+    break;
+  case TokenType::KEYWORD_UPDATE:
+    sttype = "KEYWORD_UPDATE";
+    break;
+  case TokenType::KEYWORD_SET:
+    sttype = "KEYWORD_SET";
+    break;
+  case TokenType::KEYWORD_WHERE:
+    sttype = "KEYWORD_WHERE";
+    break;
+  case TokenType::SYMBOL_EQUALS:
+    sttype = "SYMBOL_EQUALS";
     break;
   }
 
