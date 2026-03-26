@@ -69,24 +69,6 @@ SELECT * FROM users;
 
 ---
 
-## System Architecture
-
-![Detailed System Architecture](docs/image.png)
-
-### Components
-
-| Component       | Purpose                                                |
-| -----------------| --------------------------------------------------------|
-| `main.cpp`      | Stateless REPL loop — reconstructs context per command |
-| `Tokenizer`     | Lexical analysis → vector of Tokens                    |
-| `Parser`        | Grammar resolution → polymorphic AST Statement         |
-| `Executor`      | Routes AST to storage engine                           |
-| `BPlusTree`     | Indexing, leaf/internal nodes, range scans             |
-| `PageManager`   | Memory-mapped file I/O                               |
-| `RowSerializer` | Binary row encoding/decoding                           |
-
----
-
 ## How Storage Works
 
 ### File Structure
@@ -117,6 +99,24 @@ This enables $O(N)$ sequential reads vs $O(\log N)$ traversal per query.
 |---|---|---|
 | **Internal** | `int64_t` | `uint32_t` child page pointers |
 | **Leaf** | `int64_t` | Variable-length `uint8_t*` row data |
+
+---
+
+## System Architecture
+
+![Detailed System Architecture](docs/image.png)
+
+### Components
+
+| Component       | Purpose                                                |
+| -----------------| --------------------------------------------------------|
+| `main.cpp`      | Stateless REPL loop — reconstructs context per command |
+| `Tokenizer`     | Lexical analysis → vector of Tokens                    |
+| `Parser`        | Grammar resolution → polymorphic AST Statement         |
+| `Executor`      | Routes AST to storage engine                           |
+| `BPlusTree`     | Indexing, leaf/internal nodes, range scans             |
+| `PageManager`   | Memory-mapped file I/O                               |
+| `RowSerializer` | Binary row encoding/decoding                           |
 
 ---
 
