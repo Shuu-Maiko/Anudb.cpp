@@ -3,6 +3,11 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+
+#ifdef PAGE_SIZE
+#undef PAGE_SIZE
+#endif
+
 constexpr size_t PAGE_SIZE = 4096;
 #include "Constants.h"
 constexpr size_t GROWTH_INCREMENT = 256; // 256 pages are 1 MB

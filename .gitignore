@@ -31,3 +31,6 @@ a.out
 *.swp
 *~
 .#*
+
+# Web frontend
+web/

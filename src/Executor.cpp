@@ -129,7 +129,18 @@ void Executor::executeInsert(InsertStatement *stmt) {
         RowSerializer::serialize(stmt->values, info.columns);
 
     BPlusTree tree(*pm, info.metadata.rootPageId);
-    int64_t key = static_cast<int64_t>(info.metadata.autoIncrementId++);
+    int64_t key = -1;
+    bool hasPrimaryKey = false;
+    for (size_t i = 0; i < info.columns.size(); i++) {
+      if (info.columns[i].isPrimary() && info.columns[i].getType() == ColumnType::INT) {
+        hasPrimaryKey = true;
+        key = std::stoll(stmt->values[i]);
+        break;
+      }
+    }
+    if (!hasPrimaryKey) {
+      key = static_cast<int64_t>(info.metadata.autoIncrementId++);
+    }
 
     if (!tree.insert(key, rowData.data(), rowData.size())) {
       std::cerr << "Error: Failed to insert into B+Tree (duplicate key?).\n";
@@ -177,7 +188,6 @@ void Executor::executeSelect(SelectStatement *stmt) {
                                  stmt->where.column);
     }
 
-    // Header
     for (const auto &col : info.columns) {
       std::cout << col.name << "\t";
     }
@@ -186,24 +196,43 @@ void Executor::executeSelect(SelectStatement *stmt) {
       std::cout << "--------";
     std::cout << "\n";
 
-    tree.range(0, 0x7FFFFFFFFFFFFFFF,
-               [&](int64_t /*key*/, const uint8_t *value, uint16_t len) {
-                 auto vals =
-                     RowSerializer::deserialize(value, len, info.columns);
+    bool usedFastPath = false;
+    if (stmt->hasWhere && whereColIdx != -1) {
+      if (info.columns[whereColIdx].isPrimary() && info.columns[whereColIdx].getType() == ColumnType::INT) {
+        int64_t pkValue = std::stoll(stmt->where.value);
+        std::vector<uint8_t> outValue;
+        if (tree.find(pkValue, outValue)) {
+          auto vals = RowSerializer::deserialize(outValue.data(), outValue.size(), info.columns);
+          for (const auto &v : vals) {
+            std::cout << v << "\t";
+          }
+          std::cout << "\n";
+          count++;
+        }
+        usedFastPath = true;
+      }
+    }
 
-                 bool match = true;
-                 if (stmt->hasWhere) {
-                   match = (vals[whereColIdx] == stmt->where.value);
-                 }
+    if (!usedFastPath) {
+      tree.range(0, 0x7FFFFFFFFFFFFFFF,
+                 [&](int64_t /*key*/, const uint8_t *value, uint16_t len) {
+                   auto vals =
+                       RowSerializer::deserialize(value, len, info.columns);
 
-                 if (match) {
-                   for (const auto &v : vals) {
-                     std::cout << v << "\t";
+                   bool match = true;
+                   if (stmt->hasWhere) {
+                     match = (vals[whereColIdx] == stmt->where.value);
                    }
-                   std::cout << "\n";
-                   count++;
-                 }
-               });
+
+                   if (match) {
+                     for (const auto &v : vals) {
+                       std::cout << v << "\t";
+                     }
+                     std::cout << "\n";
+                     count++;
+                   }
+                 });
+    }
     std::cout << "(" << count << " rows fetched)\n";
   } catch (const std::exception &e) {
     std::cerr << "Error: " << e.what() << "\n";
@@ -250,28 +279,43 @@ void Executor::executeUpdate(UpdateStatement *stmt) {
 
     std::vector<std::pair<int64_t, std::vector<uint8_t>>> toUpdate;
 
-    tree.range(0, 0x7FFFFFFFFFFFFFFF,
-               [&](int64_t key, const uint8_t *value, uint16_t len) {
-                 auto vals =
-                     RowSerializer::deserialize(value, len, info.columns);
-                 bool match = true;
-                 if (stmt->hasWhere) {
-                   match = (vals[whereColIdx] == stmt->where.value);
-                 }
+    bool usedFastPath = false;
+    if (stmt->hasWhere && whereColIdx != -1) {
+      if (info.columns[whereColIdx].isPrimary() && info.columns[whereColIdx].getType() == ColumnType::INT) {
+        int64_t pkValue = std::stoll(stmt->where.value);
+        std::vector<uint8_t> outValue;
+        if (tree.find(pkValue, outValue)) {
+          auto vals = RowSerializer::deserialize(outValue.data(), outValue.size(), info.columns);
+          vals[updateColIdx] = stmt->value;
+          std::vector<uint8_t> newData = RowSerializer::serialize(vals, info.columns);
+          toUpdate.push_back({pkValue, newData});
+          count++;
+        }
+        usedFastPath = true;
+      }
+    }
 
-                 if (match) {
-                   vals[updateColIdx] = stmt->value;
-                   std::vector<uint8_t> newData =
-                       RowSerializer::serialize(vals, info.columns);
-                   toUpdate.push_back({key, newData});
-                   count++;
-                 }
-               });
+    if (!usedFastPath) {
+      tree.range(0, 0x7FFFFFFFFFFFFFFF,
+                 [&](int64_t key, const uint8_t *value, uint16_t len) {
+                   auto vals =
+                       RowSerializer::deserialize(value, len, info.columns);
+                   bool match = true;
+                   if (stmt->hasWhere) {
+                     match = (vals[whereColIdx] == stmt->where.value);
+                   }
+
+                   if (match) {
+                     vals[updateColIdx] = stmt->value;
+                     std::vector<uint8_t> newData =
+                         RowSerializer::serialize(vals, info.columns);
+                     toUpdate.push_back({key, newData});
+                     count++;
+                   }
+                 });
+    }
 
     for (auto &item : toUpdate) {
-      // In our BPlusTree simple impl, insert-with-existing-key usually rejects
-      // or needs handling. But since BPlusTree::insert currently returns false
-      // for existing key, we must REMOVE then INSERT.
       tree.remove(item.first);
       tree.insert(item.first, item.second.data(), item.second.size());
     }
@@ -313,20 +357,35 @@ void Executor::executeDelete(DeleteStatement *stmt) {
 
     std::vector<int64_t> toDelete;
 
-    tree.range(0, 0x7FFFFFFFFFFFFFFF,
-               [&](int64_t key, const uint8_t *value, uint16_t len) {
-                 auto vals =
-                     RowSerializer::deserialize(value, len, info.columns);
-                 bool match = true;
-                 if (stmt->hasWhere) {
-                   match = (vals[whereColIdx] == stmt->where.value);
-                 }
+    bool usedFastPath = false;
+    if (stmt->hasWhere && whereColIdx != -1) {
+      if (info.columns[whereColIdx].isPrimary() && info.columns[whereColIdx].getType() == ColumnType::INT) {
+        int64_t pkValue = std::stoll(stmt->where.value);
+        std::vector<uint8_t> outValue;
+        if (tree.find(pkValue, outValue)) {
+          toDelete.push_back(pkValue);
+          count++;
+        }
+        usedFastPath = true;
+      }
+    }
 
-                 if (match) {
-                   toDelete.push_back(key);
-                   count++;
-                 }
-               });
+    if (!usedFastPath) {
+      tree.range(0, 0x7FFFFFFFFFFFFFFF,
+                 [&](int64_t key, const uint8_t *value, uint16_t len) {
+                   auto vals =
+                       RowSerializer::deserialize(value, len, info.columns);
+                   bool match = true;
+                   if (stmt->hasWhere) {
+                     match = (vals[whereColIdx] == stmt->where.value);
+                   }
+
+                   if (match) {
+                     toDelete.push_back(key);
+                     count++;
+                   }
+                 });
+    }
 
     for (int64_t key : toDelete) {
       tree.remove(key);
