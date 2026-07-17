@@ -1,0 +1,288 @@
+:root {
+  --bg-main: #0c0c0d;
+  --text-primary: #a0a0a5;
+  --text-muted: #55555a;
+  --text-highlight-bg: #a0a0a5;
+  --text-highlight-fg: #0c0c0d;
+  --accent-bright: #ff9d00;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+.bright-num {
+  color: var(--accent-bright);
+  font-weight: 700;
+}
+
+.keyword-highlight {
+  color: #e5e7eb;
+}
+
+.type-highlight {
+  color: #38bdf8;
+}
+
+.status-highlight {
+  color: #34d399;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  letter-spacing: -0.02em;
+  overflow: hidden;
+}
+
+.texture-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: url("/metal_285.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.12;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.app-container {
+  max-width: 1200px;
+  height: 100vh;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.brutalist-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+}
+
+.system-title {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.system-status-bar {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: lowercase;
+}
+
+.system-status-bar span::before {
+  content: "[ ";
+}
+
+.system-status-bar span::after {
+  content: " ]";
+}
+
+.brutalist-main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.brutalist-console-layout {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 3rem;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .brutalist-console-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+.brutalist-terminal-container {
+  border-left: 2px solid rgba(255, 255, 255, 0.08);
+  padding-left: 1.5rem;
+  height: 520px;
+  display: flex;
+  flex-direction: column;
+}
+
+.terminal-body {
+  flex-grow: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-right: 1rem;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.terminal-output-line {
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--text-primary);
+}
+
+.log-decor {
+  color: var(--text-muted);
+  margin-right: 0.5rem;
+}
+
+.terminal-input-line {
+  display: flex;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.terminal-prompt {
+  color: var(--text-primary);
+  font-weight: bold;
+  margin-right: 0.75rem;
+}
+
+.terminal-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  outline: none;
+  flex-grow: 1;
+  caret-color: var(--text-primary);
+}
+
+.brutalist-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.sidebar-title {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+.brutalist-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.15s;
+}
+
+.brutalist-btn:hover {
+  background: var(--text-highlight-bg);
+  color: var(--text-highlight-fg);
+}
+
+.brutalist-btn:hover .bright-num {
+  color: var(--text-highlight-fg);
+}
+
+.brutalist-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 1.5rem;
+  margin-top: 2rem;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.fastfetch-card {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  margin: 1rem 0;
+  padding: 1.2rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: 4px;
+}
+
+.fastfetch-left {
+  flex-shrink: 0;
+}
+
+.fastfetch-avatar {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.fastfetch-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 12px;
+}
+
+.fastfetch-header {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.fastfetch-divider {
+  color: var(--text-muted);
+}
+
+.fastfetch-row {
+  white-space: pre-wrap;
+}
+
+.fastfetch-label {
+  color: var(--accent-bright);
+  font-weight: 700;
+}
+
+.fastfetch-link {
+  color: #38bdf8;
+  text-decoration: none;
+}
+
+.fastfetch-link:hover {
+  text-decoration: underline;
+}
